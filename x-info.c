@@ -65,6 +65,7 @@ void XInfoCalculate() {
 	Window w;
 	int revert_to;
 	XGetInputFocus(openDisplay, &w, &revert_to); //
+	if( errored ) return;
 
 	// Optimize...
 	if ( w == prevWindow )
@@ -72,10 +73,6 @@ void XInfoCalculate() {
 	else
 		prevWindow = w;
 
-	titleNameBuffer[0] = 0;
-	appNameBuffer[0]=0;
-	classNameBuffer[0]=0;
-	if( errored ) return;
 
 	Window parent = w;
 	Window root = None;
@@ -102,6 +99,8 @@ void XInfoCalculate() {
 		strncpy(titleNameBuffer,list[0],sizeof(titleNameBuffer)-1);
 		titleNameBuffer[sizeof(titleNameBuffer)-1] = 0;
 		XFreeStringList(list);
+	} else {
+		titleNameBuffer[0] = 0;
 	}
 
 	// 3. app, class.
@@ -112,6 +111,9 @@ void XInfoCalculate() {
 		appNameBuffer[sizeof(appNameBuffer)-1]=0;
 		strncpy(classNameBuffer,kls->res_class,sizeof(classNameBuffer)-1);
 		classNameBuffer[sizeof(classNameBuffer)-1]=0;
+	} else {
+		appNameBuffer[0]=0;
+		classNameBuffer[0]=0;
 	}
 	XFree(kls);
 }
