@@ -6,9 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char * XInfoFocussedWindowClass();
-const char * XInfoFocussedWindowName();
-
 
 static  char errorMessageBuffer[1024];
 static  char appNameBuffer[1024];
@@ -18,17 +15,21 @@ static  char titleNameBuffer[1024];
 static  Display *openDisplay = NULL;
 static  Window prevWindow = 0;
 
+static Bool errored = False;
+
 int handle_error(Display* display, XErrorEvent* error)
 {
 	XGetErrorText(display,
 		      error->error_code,
 		      errorMessageBuffer,
 		      sizeof(errorMessageBuffer));
+	errored = True;
 	return 1;
 }
 
 const char * XInfoInitialize() {
 	setlocale(LC_ALL, ""); // see man locale
+	errored = False;
 	XSetErrorHandler(handle_error);
 	errorMessageBuffer[0] = 0;
 	openDisplay = XOpenDisplay(NULL);
@@ -58,6 +59,8 @@ const char * XInfoFocussedWindowTitle() {
 }
 
 void XInfoCalculate() {
+
+	errored = False;
 	// 1. Window
 	Window w;
 	int revert_to;
@@ -69,6 +72,11 @@ void XInfoCalculate() {
 	else
 		prevWindow = w;
 
+	titleNameBuffer[0] = 0;
+	appNameBuffer[0]=0;
+	classNameBuffer[0]=0;
+	if( errored ) return;
+
 	Window parent = w;
 	Window root = None;
 	Window* children;
@@ -77,6 +85,7 @@ void XInfoCalculate() {
 		w = parent;
 		if (XQueryTree(openDisplay, w, &root, &parent, &children, &nchildren))
 			XFree(children);
+		if( errored ) return;
 	}
 
 	w =  XmuClientWindow(openDisplay, w);
@@ -93,8 +102,6 @@ void XInfoCalculate() {
 		strncpy(titleNameBuffer,list[0],sizeof(titleNameBuffer)-1);
 		titleNameBuffer[sizeof(titleNameBuffer)-1] = 0;
 		XFreeStringList(list);
-	} else {
-		titleNameBuffer[0] = 0;
 	}
 
 	// 3. app, class.
@@ -105,9 +112,6 @@ void XInfoCalculate() {
 		appNameBuffer[sizeof(appNameBuffer)-1]=0;
 		strncpy(classNameBuffer,kls->res_class,sizeof(classNameBuffer)-1);
 		classNameBuffer[sizeof(classNameBuffer)-1]=0;
-	} else {
-		appNameBuffer[0]=0;
-		classNameBuffer[0]=0;
 	}
 	XFree(kls);
 }
