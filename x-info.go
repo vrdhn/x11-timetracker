@@ -10,26 +10,16 @@ import (
 	"time"
 )
 
-type info struct {
-	Now   int64
-	Idle  int64
-	App   string
-	Class string
-	Title string
-}
-
 func init() {
 	C.XInfoInitialize()
 }
 
-// Also force make a copy of the string, as C is returning a static array
 func sanitize(in string) string {
-	in = in[:]
 	return strings.TrimSpace(in)
 }
-func getInfo() info {
+func getInfo() Captured {
 	C.XInfoCalculate()
-	return info{
+	return Captured{
 		Now:   time.Now().Unix(),
 		Idle:  int64(C.XInfoIdleTime()),
 		App:   sanitize(C.GoString(C.XInfoFocussedWindowApp())),
@@ -37,8 +27,4 @@ func getInfo() info {
 		Title: sanitize(C.GoString(C.XInfoFocussedWindowTitle())),
 	}
 
-}
-
-func isInfoSameApp(a info, b info) bool {
-	return a.App == b.App && a.Class == b.Class && a.Title == b.Title
 }
